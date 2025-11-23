@@ -1,14 +1,19 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/jimd0t/gator/internal/config"
+	"github.com/jimd0t/gator/internal/database"
+	_ "github.com/lib/pq"
 )
 
 type state struct {
-	config *config.Config
+	config  *config.Config
+	queries *database.Queries
 }
 
 func main() {
@@ -16,12 +21,22 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	s := state{config: &cfg}
-	cmds := commands{registeredCommands: make(map[string]func(*state, command) error)}
 
-	err = cmds.register("login", handlerLogin)
+	db, err := sql.Open("postgres", cfg.DbURL)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("error trying to open db connection: %e", err))
+	}
+
+	dbQueries := database.New(db)
+
+	s := state{config: &cfg, queries: dbQueries}
+	cmds := commands{registeredCommands: make(map[string]func(*state, command) error)}
+	commandRegisters := getCommands()
+	for _, register := range commandRegisters {
+		err = cmds.register(register.Name, register.F)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	args := os.Args
