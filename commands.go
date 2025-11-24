@@ -53,6 +53,10 @@ func getCommands() []CommandRegister {
 			Name: "users",
 			F:    handlerList,
 		},
+		{
+			Name: "agg",
+			F:    handlerAgg,
+		},
 	}
 	return commandRegisters
 }
