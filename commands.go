@@ -57,6 +57,14 @@ func getCommands() []CommandRegister {
 			Name: "agg",
 			F:    handlerAgg,
 		},
+		{
+			Name: "addfeed",
+			F:    handlerAddFeed,
+		},
+		{
+			Name: "feeds",
+			F:    handlerFeeds,
+		},
 	}
 	return commandRegisters
 }

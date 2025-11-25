@@ -8,6 +8,9 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/jimd0t/gator/internal/database"
 )
 
 type RSSFeed struct {
@@ -76,5 +79,42 @@ func handlerAgg(s *state, cmd command) error {
 		return err
 	}
 	fmt.Println(feed)
+	return nil
+}
+
+func handlerAddFeed(s *state, cmd command) error {
+	if len(cmd.Args) < 2 {
+		return fmt.Errorf("usage: %s name url", cmd.Name)
+	}
+	userID, err := s.queries.GetUser(context.Background(), s.config.CurrentUserName)
+	if err != nil {
+		return err
+	}
+	name := cmd.Args[0]
+	url := cmd.Args[1]
+
+	feedParams := database.CreateFeedParams{
+		ID:     uuid.New(),
+		Name:   name,
+		Url:    url,
+		UserID: userID,
+	}
+
+	feed, err := s.queries.CreateFeed(context.Background(), feedParams)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Feed entry added correctly! - %v | %s | %s\n", feed.ID, feed.Name, feed.Url)
+	return nil
+}
+
+func handlerFeeds(s *state, cmd command) error {
+	feeds, err := s.queries.GetFeeds(context.Background())
+	if err != nil {
+		return err
+	}
+	for _, feed := range feeds {
+		fmt.Printf("- %s (%s) | %s\n", feed.Name, feed.Url, feed.Username)
+	}
 	return nil
 }
