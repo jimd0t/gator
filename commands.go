@@ -62,6 +62,14 @@ func getCommands() []CommandRegister {
 			F:    handlerAddFeed,
 		},
 		{
+			Name: "follow",
+			F:    handlerFeedFollows,
+		},
+		{
+			Name: "following",
+			F:    handlerFollowing,
+		},
+		{
 			Name: "feeds",
 			F:    handlerFeeds,
 		},

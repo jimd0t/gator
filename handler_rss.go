@@ -94,10 +94,12 @@ func handlerAddFeed(s *state, cmd command) error {
 	url := cmd.Args[1]
 
 	feedParams := database.CreateFeedParams{
-		ID:     uuid.New(),
-		Name:   name,
-		Url:    url,
-		UserID: userID,
+		ID:        uuid.New(),
+		Name:      name,
+		Url:       url,
+		UserID:    userID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	feed, err := s.queries.CreateFeed(context.Background(), feedParams)
@@ -105,6 +107,19 @@ func handlerAddFeed(s *state, cmd command) error {
 		return err
 	}
 	fmt.Printf("Feed entry added correctly! - %v | %s | %s\n", feed.ID, feed.Name, feed.Url)
+
+	newFeedFollow := database.FollowFeedParams{
+		ID:        uuid.New(),
+		UserID:    userID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		FeedID:    feed.ID,
+	}
+
+	_, err = s.queries.FollowFeed(context.Background(), newFeedFollow)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -115,6 +130,50 @@ func handlerFeeds(s *state, cmd command) error {
 	}
 	for _, feed := range feeds {
 		fmt.Printf("- %s (%s) | %s\n", feed.Name, feed.Url, feed.Username)
+	}
+	return nil
+}
+
+func handlerFeedFollows(s *state, cmd command) error {
+	if len(cmd.Args) < 1 {
+		return fmt.Errorf("usage: %s url", cmd.Name)
+	}
+	url := cmd.Args[0]
+	feed, err := s.queries.GetFeedByUrl(context.Background(), url)
+	if err != nil {
+		return err
+	}
+	userID, err := s.queries.GetUser(context.Background(), s.config.CurrentUserName)
+	if err != nil {
+		return err
+	}
+	newFeedFollow := database.FollowFeedParams{
+		ID:        uuid.New(),
+		FeedID:    feed.ID,
+		UserID:    userID,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	feedFollow, err := s.queries.FollowFeed(context.Background(), newFeedFollow)
+	if err != nil {
+		return err
+	}
+	fmt.Println(feedFollow)
+	return nil
+}
+
+func handlerFollowing(s *state, cmd command) error {
+	userID, err := s.queries.GetUser(context.Background(), s.config.CurrentUserName)
+	if err != nil {
+		return err
+	}
+	feeds, err := s.queries.GetFeedFollowsForUser(context.Background(), userID)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("List of feeds for %s\n", s.config.CurrentUserName)
+	for _, f := range feeds {
+		fmt.Printf(" - %s\n", f.FeedName)
 	}
 	return nil
 }

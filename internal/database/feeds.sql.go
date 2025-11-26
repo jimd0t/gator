@@ -7,26 +7,31 @@ package database
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const createFeed = `-- name: CreateFeed :one
-INSERT INTO feeds (id, name, url, user_id)
+INSERT INTO feeds (id, name, url, user_id, created_at, updated_at)
 VALUES (
   $1,
   $2,
   $3,
-  $4
+  $4,
+  $5,
+  $6
 )
-RETURNING id, name, url, user_id
+RETURNING id, created_at, updated_at, name, url, user_id
 `
 
 type CreateFeedParams struct {
-	ID     uuid.UUID
-	Name   string
-	Url    string
-	UserID uuid.UUID
+	ID        uuid.UUID
+	Name      string
+	Url       string
+	UserID    uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error) {
@@ -35,14 +40,35 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 		arg.Name,
 		arg.Url,
 		arg.UserID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
 	)
 	var i Feed
 	err := row.Scan(
 		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 		&i.Name,
 		&i.Url,
 		&i.UserID,
 	)
+	return i, err
+}
+
+const getFeedByUrl = `-- name: GetFeedByUrl :one
+SELECT id, name, url FROM feeds WHERE url = $1 LIMIT 1
+`
+
+type GetFeedByUrlRow struct {
+	ID   uuid.UUID
+	Name string
+	Url  string
+}
+
+func (q *Queries) GetFeedByUrl(ctx context.Context, url string) (GetFeedByUrlRow, error) {
+	row := q.db.QueryRowContext(ctx, getFeedByUrl, url)
+	var i GetFeedByUrlRow
+	err := row.Scan(&i.ID, &i.Name, &i.Url)
 	return i, err
 }
 
