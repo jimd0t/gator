@@ -59,19 +59,23 @@ func getCommands() []CommandRegister {
 		},
 		{
 			Name: "addfeed",
-			F:    handlerAddFeed,
+			F:    middlewareLoggedIn(handlerAddFeed),
 		},
 		{
 			Name: "follow",
-			F:    handlerFeedFollows,
+			F:    middlewareLoggedIn(handlerFeedFollows),
 		},
 		{
 			Name: "following",
-			F:    handlerFollowing,
+			F:    middlewareLoggedIn(handlerFollowing),
 		},
 		{
 			Name: "feeds",
 			F:    handlerFeeds,
+		},
+		{
+			Name: "unfollow",
+			F:    middlewareLoggedIn(handlerUnfollow),
 		},
 	}
 	return commandRegisters
